@@ -198,7 +198,7 @@ class Maze:
         # cmds should be a string sequence like "fbrl....", use it as the input of BFS checklist #1
         cmd = "fbrls"
         cmds = ""
-        print(actions)
+        #print(actions)
         for action in actions: 
             #print(action)
             cmds += cmd[action-1]
@@ -213,5 +213,5 @@ class Maze:
     
 if __name__ == '__main__':
     #q = Maze("python/data/small_maze.csv")
-    q = Maze("data/maze (5).csv")
-    print(q.actions_to_str(q.getActions(q.BFS(1))))
+    q = Maze("data/maze (6).csv")
+    print(q.actions_to_str(q.getActions(q.BFS_2(1, 46))))

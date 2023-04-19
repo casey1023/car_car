@@ -24,9 +24,6 @@ class BTinterface:
 
     def send_action(self,dirc):
         # TODO : send the action to car
-        self.start()
-        self.ser.SerialReadString(dirc)
-        self.end_process()
         return
 
     def end_process(self):
