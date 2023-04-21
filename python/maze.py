@@ -31,6 +31,9 @@ class Maze:
             for j in range(1, 5):
                 if self.raw_data[i][j] == self.raw_data[i][j]:
                     self.nodes[i].setSuccessor(self.nodes[int(self.raw_data[i][j])-1], Direction(j), self.raw_data[i][j+4])
+        
+        self.find_unexplored_deadend()
+        return None
 
     def getStartPoint(self):
         if (len(self.nd_dict) < 2):
@@ -83,7 +86,7 @@ class Maze:
             for i in next:
                 check = i[0].getSuccessors()
                 #print(check[0] , temp[0])
-                if len(check) == 1 and check[0][0] == temp[0] and len_map[i[0].getIndex()] != 0:
+                if len(check) == 1 and check[0][0] == temp[0] and len_map[i[0].getIndex()] != 0 and i[0] in self.unexplored_deadend:
                     len_map[i[0].getIndex()] = len_map[temp[0].getIndex()] + i[2]
                     deadend = i[0]
                     find_deadend = True
@@ -213,5 +216,11 @@ class Maze:
     
 if __name__ == '__main__':
     #q = Maze("python/data/small_maze.csv")
-    q = Maze("data/maze (6).csv")
-    print(q.actions_to_str(q.getActions(q.BFS_2(1, 46))))
+    q = Maze("data/maze (7).csv")
+    for i in q.unexplored_deadend:
+        print(i.getIndex())
+    del q.unexplored_deadend[11]
+    del q.unexplored_deadend[10]
+    del q.unexplored_deadend[9]
+    del q.unexplored_deadend[8]
+    print(q.actions_to_str(q.getActions(q.BFS(48))))
