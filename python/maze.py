@@ -94,16 +94,12 @@ class Maze:
 
             #find and add next node
             for i in next:
-                if len_map[i[0].getIndex()] == -1:
-                    len_map[i[0].getIndex()] = len_map[temp[0].getIndex()] + i[2]
-                    temp.append(i[0])
-                elif len_map[i[0].getIndex()] != -1 and len_map[temp[0].getIndex()] + i[2] < len_map[i[0].getIndex()]:
+                if len_map[i[0].getIndex()] == -1 or len_map[temp[0].getIndex()] + i[2] < len_map[i[0].getIndex()]:
                     len_map[i[0].getIndex()] = len_map[temp[0].getIndex()] + i[2]
                     temp.append(i[0])
             del temp[0]
         
         #backtracking
-        #print("deadend "+str(deadend.getIndex())+"   "+str(len_map[deadend.getIndex()]))
         ans = [deadend]
         curent_node = deadend
         while len_map[curent_node.getIndex()] != 0:
@@ -192,7 +188,6 @@ class Maze:
         current_dir = nodes[0].getDirection(nodes[1])
         ans = []
         for i in range(len(nodes) - 1):
-            #print(self.getAction(current_dir, nodes[i], nodes[i+1]))
             ans.append(self.getAction(current_dir, nodes[i], nodes[i+1]))
             current_dir = nodes[i].getDirection(nodes[i+1])
         return ans
@@ -201,11 +196,8 @@ class Maze:
         # cmds should be a string sequence like "fbrl....", use it as the input of BFS checklist #1
         cmd = "fbrls"
         cmds = ""
-        #print(actions)
         for action in actions: 
-            #print(action)
             cmds += cmd[action-1]
-        #print(cmds)
         return cmds
 
     def strategy(self, nd):
@@ -216,7 +208,7 @@ class Maze:
     
 if __name__ == '__main__':
     #q = Maze("python/data/small_maze.csv")
-    q = Maze("data/maze (7).csv")
+    q = Maze("python/data/maze (7).csv")
     for i in q.unexplored_deadend:
         print(i.getIndex())
     del q.unexplored_deadend[11]
