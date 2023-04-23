@@ -40,6 +40,7 @@ void send_msg(const char& msg)
 // send UID back through Serial1(bluetooth serial)
 void send_byte(byte *id, byte& idSize) {
   for (byte i = 0; i < idSize; i++) {  // Send UID consequently.
+    if (id[i] < byte(16))Serial1.write('0');
     Serial1.write(id[i]);
   }
   #ifdef DEBUG

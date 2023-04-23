@@ -208,11 +208,11 @@ class Maze:
     
 if __name__ == '__main__':
     #q = Maze("python/data/small_maze.csv")
-    q = Maze("python/data/maze (7).csv")
+    q = Maze("python/data/maze (8).csv")
     for i in q.unexplored_deadend:
         print(i.getIndex())
     del q.unexplored_deadend[11]
     del q.unexplored_deadend[10]
     del q.unexplored_deadend[9]
     del q.unexplored_deadend[8]
-    print(q.actions_to_str(q.getActions(q.BFS(48))))
+    print(q.actions_to_str(q.getActions(q.BFS_2(1,48))))
