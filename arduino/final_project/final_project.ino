@@ -32,6 +32,7 @@ int IRpin_L  = 34;
 int IRpin_M  = 36;
 int IRpin_R  = 38;
 int IRpin_RR = 40;
+int count = 0;
 // RFID, 請按照自己車上的接線寫入腳位
 #define RST_PIN      49        // 讀卡機的重置腳位
 #define SS_PIN       53       // 晶片選擇腳位
@@ -82,7 +83,7 @@ void setup()
 int l2=0,l1=0,m0=0,r1=0,r2=0; //紅外線模組的讀值(0->white,1->black)
 int _Tp=90; //set your own value for motor power
 bool state=false; //set state to false to halt the car, set state to true to activate the car
-BT_CMD _cmd = NOTHING; //enum for bluetooth message, reference in bluetooth.h line 2
+BT_CMD _cmd = n; //enum for bluetooth message, reference in bluetooth.h line 2
 /*===========================initialize variables===========================*/
 
 /*===========================declare function prototypes===========================*/
@@ -93,23 +94,27 @@ void SetState();// switch the state
 /*===========================define function===========================*/
 int task[] = {2, 1, 0, 1, 3, 4};//0->ignore;1->turn_around;2->turn_right;3->turn_left; 4->stop
 int task_counter = 0;
-bool stop = false;
+//bool stop = false;
 void loop()
 {
   if(!state) motorWrite(0,0);
-  else Search();
+  else {
+    Search();
+    tracking();
+  } 
   SetState();
-
+  
   l2 = digitalRead(IRpin_LL);
   l1 = digitalRead(IRpin_L);
   m0 = digitalRead(IRpin_M);
   r1 = digitalRead(IRpin_R);
   r2 = digitalRead(IRpin_RR);
-
+  /*
   if(checknode()){
     Serial.println(task[task_counter]);
         switch(task[task_counter]){
             case 0: //ignore
+                state = true;
                 ignore();
                 break;
             case 1:
@@ -122,27 +127,24 @@ void loop()
                 turn_left();
                 break;
             case 4:
-                stop = true;
+                state = false;
                 break;
         }
         if(task_counter + 1 < sizeof(task)/sizeof(int))task_counter++;
     }
-    if(!stop)tracking();  
+    */
+      
 
 
 
-    byte a;
+    byte a; //RFID
     byte* b=nullptr;
     b = rfid(a);
     if(b != nullptr){
-      //Serial.print(*b);
-      //Serial.println("hello");
       for(byte i = 0; i< a; i++){
         if(b[i] < byte(16))Serial.print('0');
         Serial.print(b[i], HEX);
         digitalWrite(board_led, HIGH);
-
-
       }
       send_byte(b, a);
   
@@ -157,6 +159,44 @@ void SetState()
   // TODO:
   // 1. Get command from bluetooth 
   // 2. Change state if need
+  BT_CMD Com = ask_BT();
+  //Serial.println(Com);
+  switch (Com)
+  {
+    case f:
+      state = true;
+      if(!count)count++;
+      ignore();
+      break;
+    case b:
+      turn_around();
+      break;
+    case l:
+      turn_left();
+      break; 
+    case r:
+      turn_right();
+      break; 
+    case s:
+      state = true;
+      break; 
+    case n:
+      if(!count)state = false;
+      else{
+      state = true;
+      ignore();
+      }
+      break; 
+    case e:
+      state = false;
+      break;
+    default:
+      state = true;
+      ignore();
+      break;
+  }
+
+  
 }
 
 void Search()

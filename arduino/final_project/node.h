@@ -27,6 +27,7 @@ bool checknode(){
 }
 
 void turn_around(){
+    while(!checknode()){}
     while(checknode()){
         motorWrite(150, 150);
         delay(20);
@@ -36,6 +37,7 @@ void turn_around(){
 }
 
 void turn_right(){
+    while(!checknode()){}
     while(checknode()){
         motorWrite(150, 150);
         delay(20);
@@ -45,6 +47,7 @@ void turn_right(){
 }
 
 void turn_left(){
+    while(!checknode()){}
     while(checknode()){
         motorWrite(150, 150);
         delay(20);
@@ -53,9 +56,8 @@ void turn_left(){
     delay(1000);
 }
 void ignore(){
-  while(checknode()){
+  while(!checknode()){
         motorWrite(150, 150);
-        delay(20);
     }
 }
 #endif

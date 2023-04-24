@@ -8,19 +8,29 @@
 
 /*if you have no idea how to start*/
 /*check out what you have learned from week 2*/
-
+#include <string.h>
 enum BT_CMD {
-  NOTHING,
+  f, b, l, r, s, n, e
   // TODO: add your own command type here
 };
 
 BT_CMD ask_BT(){
-    BT_CMD message=NOTHING;
+    BT_CMD message = n;
+    //string cmdstring;
     char cmd;
     if(Serial1.available()){
-      // TODO:
-      // 1. get cmd from Serial1(bluetooth serial)
-      // 2. link bluetooth message to your own command type
+      cmd = Serial1.read();
+      switch (cmd)
+      {
+        case 'f': message = f; break;
+        case 'b': message = b; break;
+        case 'l': message = l; break;
+        case 'r': message = r; break;
+        case 's': message = s; break;
+        case 'e': message = e; break;
+        default:
+          break;
+      }
       #ifdef DEBUG
       Serial.print("cmd : ");
       Serial.println(cmd);
@@ -34,13 +44,13 @@ BT_CMD ask_BT(){
 // (but need to convert to byte type)
 void send_msg(const char& msg)
 {
+  Serial1.write(msg);
      // TODO:
 }// send_msg
 
 // send UID back through Serial1(bluetooth serial)
 void send_byte(byte *id, byte& idSize) {
   for (byte i = 0; i < idSize; i++) {  // Send UID consequently.
-    if (id[i] < byte(16))Serial1.write('0');
     Serial1.write(id[i]);
   }
   #ifdef DEBUG
