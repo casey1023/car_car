@@ -16,10 +16,8 @@ enum BT_CMD {
 
 BT_CMD ask_BT(){
     BT_CMD message = n;
-    //string cmdstring;
     char cmd;
-    if(Serial1.available()){
-      cmd = Serial1.read();
+    if(Serial1.available())cmd = Serial1.read();
       switch (cmd)
       {
         case 'f': message = f; break;
@@ -34,9 +32,8 @@ BT_CMD ask_BT(){
       #ifdef DEBUG
       Serial.print("cmd : ");
       Serial.println(cmd);
-      #endif
-    }
-    return message;
+      #endif  
+    return message; 
 }// ask_BT
 
 // send msg back through Serial1(bluetooth serial)

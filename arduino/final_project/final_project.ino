@@ -156,6 +156,7 @@ void loop()
 
 void SetState()
 {
+  
   // TODO:
   // 1. Get command from bluetooth 
   // 2. Change state if need
@@ -191,8 +192,8 @@ void SetState()
       state = false;
       break;
     default:
-      state = true;
-      ignore();
+      state = false;
+      //ignore();
       break;
   }
 
