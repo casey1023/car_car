@@ -224,6 +224,7 @@ class Maze:
 
     def strategy_2(self):
         #tsp dp
+        '''
         length_mem = {}     #(path, len)
         def dp(start_point: int, previous_nodes: tuple, endpoint: int):  #(path: list, len: int)
             best_path = []
@@ -233,13 +234,13 @@ class Maze:
                 best_path = list(previous_nodes)
                 best_path.append(endpoint)
                 length = adj_map[start_point][best_path[0]] + adj_map[best_path[0]][endpoint]
-                return (best_path, length)
+                return (copy.deepcopy(best_path), copy.deepcopy(length))
             
             elif previous_nodes in length_mem:
                 ans = copy.deepcopy(length_mem[previous_nodes][0])
                 ans.append(endpoint)
-                return (ans, length_mem[previous_nodes][1] + adj_map[length_mem[previous_nodes][0][-1]][endpoint])
-            
+                return (ans, copy.deepcopy(length_mem[previous_nodes][1] + adj_map[ length_mem[previous_nodes][0][-1] ][endpoint]))
+
             else:
                 for i in range(len(previous_nodes)):
                     next_pre_nodes = list(previous_nodes)
@@ -254,7 +255,38 @@ class Maze:
                 
                 length_mem[previous_nodes] = (copy.deepcopy(best_path), copy.deepcopy(length))
                 best_path.append(endpoint)
-                return (best_path, length)
+                return (copy.deepcopy(best_path), copy.deepcopy(length))
+        '''
+        length_mem = {}     #(path, len)
+        def dp(start_node: int, unvisited_nodes: tuple):
+            # Base case: no unvisited nodes left, return path from start to itself
+            if not unvisited_nodes:
+                return ([start_node], 0)
+            
+            # Check if subproblem has already been solved
+            subproblem = (start_node, unvisited_nodes)
+            if subproblem in length_mem:
+                return length_mem[subproblem]
+            
+            # Initialize best path and length
+            best_path = None
+            length = float('inf')
+            
+            # Loop over possible next nodes to visit
+            for next_node in unvisited_nodes:
+                remaining_nodes = tuple(node for node in unvisited_nodes if node != next_node)
+                (partial_path, partial_length) = dp(next_node, remaining_nodes)
+                
+                # Update best path and length if this path is better
+                total_length = adj_map[start_node][next_node] + partial_length
+                if total_length < length:
+                    best_path = [start_node] + partial_path
+                    length = total_length
+            
+            # Memoize result and return
+            result = (best_path, length)
+            length_mem[subproblem] = result
+            return result
 
 
         #create adjacent list
@@ -262,15 +294,20 @@ class Maze:
 
         for i in self.unexplored_deadend:
             temp.append( i.getIndex() )
+        print(temp)
 
         permu = permutations(temp, 2)
         adj_map = [[0 for j in range(len(temp))] for i in range(len(temp))]
 
         for i in list(permu):
-            adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ] = ( len(self.BFS_2(i[0], i[1])) - 1 ) * 2
+            adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ] = ( len(self.BFS_2(i[0], i[1])) - 1 )
             adj_map[ temp.index(i[1]) ][ temp.index(i[0]) ] = adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ]
+        
+        for i in adj_map:
+            print(i)
 
         #start dp
+        '''
         nodes_to_run = []
         for i in range(1, len(temp)):
             nodes_to_run.append(i)
@@ -283,12 +320,110 @@ class Maze:
             del next_pre_nodes[i]
 
             (tmp_path, tmp_len) = dp(0, tuple(next_pre_nodes), tmp_endpoint)
+            print(tmp_path, tmp_len)
             
             if tmp_len < best_length:
                 best_path = tmp_path
                 best_length = tmp_len
 
         best_path = [0] + best_path
+        '''
+        (start_node, num_nodes) = (0, len(temp))
+        unvisited_nodes = tuple(node for node in range(num_nodes) if node != start_node)
+        (best_path, length) = dp(start_node, unvisited_nodes)
+        print(best_path, length)
+
+        #convert dp result to the order of unexplored deadends
+        nodes_order = []
+        
+        for i in best_path:
+            nodes_order.append(temp[i])
+
+        #convert the order of deadends to actual nodes on the path
+        ans = [self.nd_dict[ nodes_order[0] ]]
+        for i in range(len(nodes_order) - 1):
+            tmp = self.BFS_2(nodes_order[i], nodes_order[i + 1])
+            ans += tmp[1:]
+        return ans
+    
+    def strategy_3(self):
+        #tsp dp
+        length_mem = {}
+        node_weights = []
+
+        def manhattan_distance(a):
+            start = self.getStartPoint().getIndex() #43
+            if start == a:
+                return 0
+
+            counter_x = 0
+            while start - counter_x * 6 > a:
+                counter_x += 1
+            
+            counter_y = a - start - counter_x * 6
+            return counter_x + counter_y
+
+
+        def dp(start_node: int, unvisited_nodes: tuple, steps_left: int):
+            # Base case: no unvisited nodes left, return path from start to itself
+            if not unvisited_nodes or steps_left == 0:
+                return ([start_node], 0, 0)
+            
+            # Check if subproblem has already been solved
+            subproblem = (start_node, unvisited_nodes, steps_left)
+            if subproblem in length_mem:
+                return length_mem[subproblem]
+            
+            # Initialize best path, length, and max node weights
+            best_path = None
+            length = float('inf')
+            max_node_weights = 0
+            
+            # Loop over possible next nodes to visit
+            for next_node in unvisited_nodes:
+                remaining_nodes = tuple(node for node in unvisited_nodes if node != next_node)
+                (partial_path, partial_length, partial_max_node_weights) = dp(next_node, remaining_nodes, steps_left - 1)
+                
+                # Update best path, length, and max node weights if this path is better
+                total_length = adj_map[start_node][next_node] + partial_length
+                if total_length < length:
+                    best_path = [start_node] + partial_path
+                    length = total_length
+                    max_node_weights = max(node_weights[next_node], partial_max_node_weights)
+            
+            # Memoize result and return
+            result = (best_path, length, max_node_weights)
+            length_mem[subproblem] = result
+            return result
+
+
+        #create adjacent list
+        temp = [self.getStartPoint().getIndex()]
+
+        for i in self.unexplored_deadend:
+            temp.append( i.getIndex() )
+        print(temp)
+
+        permu = permutations(temp, 2)
+        adj_map = [[0 for j in range(len(temp))] for i in range(len(temp))]
+
+        for i in list(permu):
+            adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ] = ( len(self.BFS_2(i[0], i[1])) - 1 )
+            adj_map[ temp.index(i[1]) ][ temp.index(i[0]) ] = adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ]
+        
+        for i in adj_map:
+            print(i)
+        
+        #init nodes weights
+        for i in range(len(temp)):
+            node_weights.append(manhattan_distance(temp[i]))
+
+        #start dp
+        
+        (start_node, num_nodes, max_steps) = (0, len(temp), int(input("please input maxium steps :")))
+        unvisited_nodes = tuple(node for node in range(num_nodes) if node != start_node)
+        (best_path, length, max_node_weights) = dp(start_node, unvisited_nodes, max_steps)
+        print(best_path, length, max_node_weights)
 
         #convert dp result to the order of unexplored deadends
         nodes_order = []
@@ -308,7 +443,7 @@ if __name__ == '__main__':
     q = Maze("python/data/big_maze_111.csv")
     #print(q.actions_to_str(q.getActions(q.strategy())))
     time1 = time.time()
-    print(q.actions_to_str(q.getActions(q.strategy_2())))
+    print(q.actions_to_str(q.getActions(q.strategy())))
     time2 = time.time()
     print(time2 - time1)
     
