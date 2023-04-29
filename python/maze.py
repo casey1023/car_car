@@ -4,7 +4,9 @@ import csv
 import pandas
 from enum import IntEnum
 import math
-
+from itertools import permutations
+import time
+import copy
 
 class Action(IntEnum):
     ADVANCE = 1
@@ -23,6 +25,7 @@ class Maze:
         self.nodes = []
         self.nd_dict = dict()  # key: index, value: the correspond node
         self.unexplored_deadend = []
+        self.start_point = -1
         for i in range(len(self.raw_data)):
             self.nodes.append(Node(int(self.raw_data[i][0])))
     
@@ -36,14 +39,22 @@ class Maze:
         return None
 
     def getStartPoint(self):
+        '''
         if (len(self.nd_dict) < 2):
             print("Error: the start point is not included.")
             return 0
-        return self.nd_dict[1]
+        '''
+        if self.start_point != -1:
+            return self.start_point
+        else:
+            start = input("input start point here:")
+            self.start_point = self.nd_dict[int(start)]
+            return self.nd_dict[int(start)]
     
     def find_unexplored_deadend(self):
         temp = [self.getStartPoint()]
         walked = [-1 for i in range(len(self.nodes) + 1)]
+        walked[self.getStartPoint().getIndex()] = 1
         
         while len(temp) > 0:
             next = temp[0].getSuccessors()
@@ -69,9 +80,10 @@ class Maze:
         return self.nd_dict
 
     def BFS(self, nd):
+        #nd is node type
         # TODO : design your data structure here for your algorithm
         # Tips : return a sequence of nodes from the node to the nearest unexplored deadend
-        temp = [self.nd_dict[nd]]
+        temp = [self.nd_dict[nd.getIndex()]]
         len_map = [-1 for i in range(len(self.raw_data) + 1)]
         len_map[temp[0].getIndex()] = 0
 
@@ -85,7 +97,6 @@ class Maze:
             #encounter deadend
             for i in next:
                 check = i[0].getSuccessors()
-                #print(check[0] , temp[0])
                 if len(check) == 1 and check[0][0] == temp[0] and len_map[i[0].getIndex()] != 0 and i[0] in self.unexplored_deadend:
                     len_map[i[0].getIndex()] = len_map[temp[0].getIndex()] + i[2]
                     deadend = i[0]
@@ -113,6 +124,7 @@ class Maze:
         return ans
 
     def BFS_2(self, nd_from, nd_to):
+        #nd_from, nd_to is int type
         # TODO : similar to BFS but with fixed start point and end point
         # Tips : return a sequence of nodes of the shortest path
         len_map = [-1 for i in range(len(self.nodes) + 1)]
@@ -200,19 +212,103 @@ class Maze:
             cmds += cmd[action-1]
         return cmds
 
-    def strategy(self, nd):
-        return self.BFS(nd)
+    #always find nearest unexplored end
+    def strategy(self):
+        start = self.getStartPoint()
+        ans_nodes = [start]
+        while len(self.unexplored_deadend) > 0:
+            temp_nodes = self.BFS(ans_nodes[-1])
+            ans_nodes += temp_nodes[1:]
+            del self.unexplored_deadend[self.unexplored_deadend.index(ans_nodes[-1])]
+        return ans_nodes
 
-    def strategy_2(self, nd_from, nd_to):
-        return self.BFS_2(nd_from, nd_to)
+    def strategy_2(self):
+        #tsp dp
+        length_mem = {}     #(path, len)
+        def dp(start_point: int, previous_nodes: tuple, endpoint: int):  #(path: list, len: int)
+            best_path = []
+            length = 1e10
+
+            if len(previous_nodes) == 1:
+                best_path = list(previous_nodes)
+                best_path.append(endpoint)
+                length = adj_map[start_point][best_path[0]] + adj_map[best_path[0]][endpoint]
+                return (best_path, length)
+            
+            elif previous_nodes in length_mem:
+                ans = copy.deepcopy(length_mem[previous_nodes][0])
+                ans.append(endpoint)
+                return (ans, length_mem[previous_nodes][1] + adj_map[length_mem[previous_nodes][0][-1]][endpoint])
+            
+            else:
+                for i in range(len(previous_nodes)):
+                    next_pre_nodes = list(previous_nodes)
+                    tmp_endpoint = next_pre_nodes[i]
+                    del next_pre_nodes[i]
+
+                    (tmp_path, tmp_len) = dp(start_point, tuple(next_pre_nodes), tmp_endpoint)
+                    
+                    if tmp_len + adj_map[tmp_path[-1]][endpoint] < length:
+                        best_path = tmp_path
+                        length = tmp_len + adj_map[tmp_path[-1]][endpoint]
+                
+                length_mem[previous_nodes] = (copy.deepcopy(best_path), copy.deepcopy(length))
+                best_path.append(endpoint)
+                return (best_path, length)
+
+
+        #create adjacent list
+        temp = [self.getStartPoint().getIndex()]
+
+        for i in self.unexplored_deadend:
+            temp.append( i.getIndex() )
+
+        permu = permutations(temp, 2)
+        adj_map = [[0 for j in range(len(temp))] for i in range(len(temp))]
+
+        for i in list(permu):
+            adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ] = ( len(self.BFS_2(i[0], i[1])) - 1 ) * 2
+            adj_map[ temp.index(i[1]) ][ temp.index(i[0]) ] = adj_map[ temp.index(i[0]) ][ temp.index(i[1]) ]
+
+        #start dp
+        nodes_to_run = []
+        for i in range(1, len(temp)):
+            nodes_to_run.append(i)
+
+        best_path = []
+        best_length  = 1e10
+        for i in range(len(nodes_to_run)):
+            next_pre_nodes = list(nodes_to_run)
+            tmp_endpoint = next_pre_nodes[i]
+            del next_pre_nodes[i]
+
+            (tmp_path, tmp_len) = dp(0, tuple(next_pre_nodes), tmp_endpoint)
+            
+            if tmp_len < best_length:
+                best_path = tmp_path
+                best_length = tmp_len
+
+        best_path = [0] + best_path
+
+        #convert dp result to the order of unexplored deadends
+        nodes_order = []
+        
+        for i in best_path:
+            nodes_order.append(temp[i])
+
+        #convert the order of deadends to actual nodes on the path
+        ans = [self.nd_dict[ nodes_order[0] ]]
+        for i in range(len(nodes_order) - 1):
+            tmp = self.BFS_2(nodes_order[i], nodes_order[i + 1])
+            ans += tmp[1:]
+        return ans
     
 if __name__ == '__main__':
     #q = Maze("python/data/small_maze.csv")
-    q = Maze("python/data/maze (8).csv")
-    for i in q.unexplored_deadend:
-        print(i.getIndex())
-    del q.unexplored_deadend[11]
-    del q.unexplored_deadend[10]
-    del q.unexplored_deadend[9]
-    del q.unexplored_deadend[8]
-    print(q.actions_to_str(q.getActions(q.BFS_2(1,48))))
+    q = Maze("python/data/big_maze_111.csv")
+    #print(q.actions_to_str(q.getActions(q.strategy())))
+    time1 = time.time()
+    print(q.actions_to_str(q.getActions(q.strategy_2())))
+    time2 = time.time()
+    print(time2 - time1)
+    
