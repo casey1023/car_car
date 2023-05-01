@@ -47,6 +47,9 @@ def main():
                         point.add_UID(new_UID[2:])
                         print(point.getCurrentScore())
                         UID_temp = []
+                    
+                    if count > 10:
+                        UID_temp = []
                 else:
                     print(UID)
                     point.add_UID(UID[2:])
